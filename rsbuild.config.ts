@@ -10,8 +10,7 @@ export default defineConfig({
     plugins: [pluginReact(), pluginBasicSsl()],
     html: {
         template: "./index.html",
-        title: "Champion Trader",
-        favicon: "public/favicon.ico",
+        title: "deriv Api template",
     },
     source: {
         define: {
@@ -36,7 +35,7 @@ export default defineConfig({
                 from: path.resolve(__dirname, "node_modules/@deriv-com/smartcharts-champion/dist"),
                 to: "js/smartcharts/",
                 globOptions: {
-                    ignore: ["**/*.LICENSE.txt"],
+                    ignore: ["**/*.LICENSE.txt", "**/favicon.png"],
                 },
             },
             {
