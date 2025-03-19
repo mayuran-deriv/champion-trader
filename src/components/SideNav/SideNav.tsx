@@ -22,13 +22,14 @@ export const SideNav: React.FC = () => {
             className={`${isLandscape && isSideNavVisible ? "flex" : "hidden"} fixed z-[60] flex-col h-[100dvh] sticky top-0 w-16 border-r border-theme bg-theme overflow-y-auto`}
         >
             <div className="flex flex-col items-center gap-8 py-4">
-                <a href="/" className="">
+                {/* TODO: Add customize logo */}
+                {/* <a href="/" className="">
                     <img
                         src="/logo.svg"
                         alt="Champion Trader Logo"
                         className="w-8 h-8 rounded-full"
                     />
-                </a>
+                </a> */}
                 <div className="flex flex-col gap-4">
                     {isLoggedIn && (
                         <button
