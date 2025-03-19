@@ -9,7 +9,6 @@
         "build": "rsbuild build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "rsbuild preview",
-        "test": "jest --config jest.config.cjs",
         "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
         "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
         "lint-staged": "lint-staged"
