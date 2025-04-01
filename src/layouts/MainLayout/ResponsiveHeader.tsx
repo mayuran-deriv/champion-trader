@@ -21,22 +21,13 @@ export const ResponsiveHeader: React.FC<HeaderProps> = ({
 
     return (
         <header
-            className={`flex items-center gap-4 px-4 py-2 lg:border-b lg:border-theme bg-theme ${className}`}
+            className={`flex items-center gap-4 px-4 py-2 lg:border-b lg:border-theme bg-theme justify-end ${className}`}
             id="header"
         >
-            {showLogo && (
-                <a href="/">
-                    <img
-                        src="/logo.svg"
-                        alt="Champion Trader Logo"
-                        className="w-8 h-8 rounded-full"
-                    />
-                </a>
-            )}
-            <div className="flex items-center justify-end flex-1">
+            <div className="flex items-center justify-end">
                 <div className="flex-1">
                     {isLoggedIn && (
-                        <div>
+                        <div className="mr-4">
                             <AccountSwitcher />
                         </div>
                     )}

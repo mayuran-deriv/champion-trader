@@ -1,6 +1,5 @@
 import React from "react";
 import TradeParam from "@/components/TradeFields/TradeParam";
-import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useOrientationStore } from "@/stores/orientationStore";
 import { DesktopTradeFieldCard } from "@/components/ui/desktop-trade-field-card";
@@ -23,6 +22,7 @@ interface StakeFieldProps {
     onMobileClick?: () => void;
     // Error handler callback
     handleError?: (hasError: boolean, errorMessage: string | null) => void;
+    stackDisabled?: boolean;
 }
 
 export const StakeField: React.FC<StakeFieldProps> = ({
@@ -36,6 +36,7 @@ export const StakeField: React.FC<StakeFieldProps> = ({
     onDecrement,
     onMobileClick,
     handleError,
+    stackDisabled = false,
 }) => {
     const { isLandscape } = useOrientationStore();
 
@@ -106,68 +107,77 @@ export const StakeField: React.FC<StakeFieldProps> = ({
     }
 
     return (
-        <div className="bg-theme-bg rounded-lg">
-            <DesktopTradeFieldCard isSelected={isStakeSelected} error={error}>
-                <div
-                    className={`flex flex-col ${className} ${!productConfig ? "opacity-50 cursor-not-allowed" : ""}`}
-                    onClick={() => handleSelect(true)}
-                    onBlur={(e) => {
-                        // Only blur if we're not clicking inside the component
-                        if (!e.currentTarget.contains(e.relatedTarget)) {
-                            handleSelect(false);
-                        }
-                    }}
-                    tabIndex={0}
-                >
-                    <div ref={containerRef} className="flex rounded-lg h-[48px]">
-                        <div className="flex flex-col flex-1 justify-between">
-                            <span className="text-left font-ibm-plex text-xs leading-[18px] font-normal text-theme-muted">
-                                Stake ({currency})
-                            </span>
-                            <div className="relative">
-                                {productConfig ? (
-                                    <input
-                                        ref={inputRef}
-                                        type="text"
-                                        value={`${localValue}`}
-                                        onChange={handleChange}
-                                        onFocus={() => handleSelect(true)}
-                                        className="text-left font-ibm-plex text-base leading-6 font-normal bg-transparent w-24 outline-none text-theme"
-                                        aria-label="Stake amount"
-                                    />
-                                ) : (
-                                    <span className="text-left font-ibm-plex text-base leading-6 font-normal text-gray-900">
-                                        N/A
-                                    </span>
-                                )}
+        <div className="flex flex-col">
+            <div className="bg-theme-bg rounded-lg">
+                <DesktopTradeFieldCard isSelected={isStakeSelected} error={error}>
+                    <div
+                        className={`flex flex-col ${className} ${!productConfig ? "opacity-50 cursor-not-allowed" : ""}`}
+                        onClick={() => handleSelect(true)}
+                        onBlur={(e) => {
+                            // Only blur if we're not clicking inside the component
+                            if (!e.currentTarget.contains(e.relatedTarget)) {
+                                handleSelect(false);
+                            }
+                        }}
+                        tabIndex={0}
+                    >
+                        <div ref={containerRef} className="flex rounded-lg h-[48px]">
+                            <div className="flex flex-col flex-1 justify-between">
+                                <span className="text-left font-ibm-plex text-xs leading-[18px] font-normal text-theme-muted">
+                                    Stake ({currency})
+                                </span>
+                                <div className="relative">
+                                    {productConfig ? (
+                                        <input
+                                            ref={inputRef}
+                                            type="text"
+                                            value={`${localValue}`}
+                                            onChange={handleChange}
+                                            onFocus={() => handleSelect(true)}
+                                            className="text-left font-ibm-plex text-base leading-6 font-normal bg-transparent w-24 outline-none text-theme"
+                                            aria-label="Stake amount"
+                                            disabled={stackDisabled}
+                                        />
+                                    ) : (
+                                        <span className="text-left font-ibm-plex text-base leading-6 font-normal text-gray-900">
+                                            N/A
+                                        </span>
+                                    )}
+                                </div>
                             </div>
+                            {productConfig && (
+                                <div className="flex items-center">
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                                        <button
+                                            className="flex items-center justify-center text-2xl text-theme"
+                                            onClick={handleDecrement}
+                                            aria-label="Decrease stake"
+                                        >
+                                            −
+                                        </button>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                                        <button
+                                            className="flex items-center justify-center text-2xl text-theme"
+                                            onClick={handleIncrement}
+                                            aria-label="Increase stake"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        {productConfig && (
-                            <div className="flex items-center">
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors">
-                                    <button
-                                        className="flex items-center justify-center text-2xl text-theme"
-                                        onClick={handleDecrement}
-                                        aria-label="Decrease stake"
-                                    >
-                                        −
-                                    </button>
-                                </div>
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors">
-                                    <button
-                                        className="flex items-center justify-center text-2xl text-theme"
-                                        onClick={handleIncrement}
-                                        aria-label="Increase stake"
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                            </div>
-                        )}
                     </div>
-                    <Tooltip />
+                </DesktopTradeFieldCard>
+            </div>
+            {error && errorMessage && (
+                <div className="mt-1">
+                    <span className="font-ibm-plex text-xs leading-[18px] font-normal text-red-500">
+                        {errorMessage}
+                    </span>
                 </div>
-            </DesktopTradeFieldCard>
+            )}
         </div>
     );
 };

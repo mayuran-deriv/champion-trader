@@ -27,7 +27,8 @@ const parseDuration = (durationString: string): [number, string] => {
  */
 export const useProposalStream = (options?: { enabled?: boolean }) => {
     // Get parameters directly from tradeStore
-    const { trade_type, instrument, stake, duration, allowEquals, productConfig } = useTradeStore();
+    const { trade_type, instrument, stake, duration, allowEquals, productConfig, isStakeError } =
+        useTradeStore();
 
     // Get account_uuid from clientStore
     const { account_uuid } = useClientStore();
@@ -36,12 +37,14 @@ export const useProposalStream = (options?: { enabled?: boolean }) => {
     const [durationValue, durationUnit] = parseDuration(duration);
 
     // Default enabled to true if not provided, and ensure productConfig is available
+    // Don't call the payout stream if there's a stake error
     const isEnabled =
         (options?.enabled !== undefined ? options.enabled : true) &&
         Boolean(productConfig?.data) &&
         !!durationValue &&
         !!durationUnit &&
-        !!stake;
+        !!stake &&
+        !isStakeError;
 
     // Create proposal parameters from store values
     const proposalParams = useMemo<ProposalRequest>(

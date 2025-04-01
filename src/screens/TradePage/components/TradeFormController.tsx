@@ -4,19 +4,18 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useToastStore } from "@/stores/toastStore";
 import { ServerTime } from "@/components/ServerTime";
 import { TradeButton } from "@/components/TradeButton";
-import { ResponsiveTradeParamLayout } from "@/components/ui/responsive-trade-param-layout";
 import { useTradeStore } from "@/stores/tradeStore";
 import { tradeTypeConfigs } from "@/config/tradeTypes";
 import { useTradeActions } from "@/hooks/useTradeActions";
 import { useClientStore } from "@/stores/clientStore";
 import { HowToTrade } from "@/components/HowToTrade";
 import { TradeNotification } from "@/components/ui/trade-notification";
-import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { useProductConfig } from "@/hooks/product/useProductConfig";
 import { useProposalStream } from "@/hooks/proposal/useProposal";
 import { validateStake } from "@/components/Stake/utils/validation";
 import { parseStakeAmount } from "@/utils/stake";
 import { StandaloneStopwatchBoldIcon } from "@deriv/quill-icons";
+import { useDeviceDetection } from "@/hooks";
 
 // Lazy load components
 const DurationField = lazy(() =>
@@ -87,7 +86,6 @@ const validateTradeParameters = (
     productConfig: any,
     currency: string
 ): { isValid: boolean; errorMessage: string | null } => {
-    console.log({ stake });
     if (!productConfig?.data) {
         return { isValid: true, errorMessage: null }; // Default to valid if no config
     }
@@ -199,13 +197,15 @@ const handleTradeClick = async ({
 };
 
 export const TradeFormController: React.FC<TradeFormControllerProps> = ({ isLandscape }) => {
-    const { trade_type, instrument, productConfig, setPayouts, stake, setStake } = useTradeStore();
+    const { trade_type, instrument, productConfig, setPayouts, stake, setStake, isStakeError } =
+        useTradeStore();
     const { fetchProductConfig } = useProductConfig();
     const { setSidebar } = useMainLayoutStore();
     const { toast, hideToast } = useToastStore();
     const { currency, isLoggedIn } = useClientStore();
     const tradeActions = useTradeActions();
     const config = tradeTypeConfigs[trade_type];
+    const { isMobile } = useDeviceDetection();
 
     // Track stake validation errors separately to persist them across payout updates
     const [stakeValidationError, setStakeValidationError] = useState<string | null>(null);
@@ -294,7 +294,8 @@ export const TradeFormController: React.FC<TradeFormControllerProps> = ({ isLand
                 config.buttons.forEach((button: any) => {
                     // Preserve existing payout and validationError values from previous state
                     initialLoadingStates[button.actionName] = {
-                        loading: true,
+                        // Stop loading if there's a stake error
+                        loading: isStakeError ? false : true,
                         error: null,
                         payout: prevStates[button.actionName]?.payout || 0,
                         reconnecting: false,
@@ -403,7 +404,7 @@ export const TradeFormController: React.FC<TradeFormControllerProps> = ({ isLand
     ]);
 
     // Validate all trade parameters (stake and payout) for all buttons
-    const validateAllTradeParameters = () => {
+    const validateAllTradeParameters = (stakeValue?: string) => {
         if (!productConfig?.data) return;
 
         const payoutValidation = productConfig.data.validations.payout;
@@ -411,9 +412,9 @@ export const TradeFormController: React.FC<TradeFormControllerProps> = ({ isLand
 
         // First validate stake if needed
         if (!stakeValidationError && stake) {
-            const stakeValue = parseStakeAmount(stake || "0");
+            const parsedStakeValue = parseStakeAmount(stakeValue || stake || "0");
             const stakeResult = validateStake({
-                amount: stakeValue,
+                amount: parsedStakeValue,
                 minStake: parseFloat(stakeValidation.min),
                 maxStake: parseFloat(stakeValidation.max),
                 currency,
@@ -504,8 +505,8 @@ export const TradeFormController: React.FC<TradeFormControllerProps> = ({ isLand
 
         // If stake is now valid, re-validate payout
         if (!hasError) {
-            // Use setTimeout to ensure state updates have completed
-            setTimeout(() => validateAllTradeParameters(), 0);
+            // Pass the current debouncedValue to ensure we're using the latest stake
+            setTimeout(() => validateAllTradeParameters(debouncedValue), 0);
         }
     };
 
@@ -551,237 +552,120 @@ export const TradeFormController: React.FC<TradeFormControllerProps> = ({ isLand
         <div
             id="trade-section"
             className={`${
-                isLandscape
-                    ? "w-[30%] max-w-[272px] flex flex-col justify-start px-4 gap-2"
-                    : "bg-theme"
+                isLandscape ? "flex flex-col justify-start px-4 gap-2" : "bg-theme px-4"
             }`}
         >
-            {isLandscape ? (
-                <div className={`flex ${isLoggedIn ? "justify-between pb-2" : "justify-end"}`}>
-                    {isLoggedIn && <AccountSwitcher />}
-                    {isLoggedIn ? (
-                        <button
-                            className="text-sm font-semibold rounded-3xl bg-color-brand-700 hover:bg-color-brand-600 text-black flex h-8 min-w-[80px] px-4 justify-center items-center"
-                            // onClick={}
-                        >
-                            Deposit
-                        </button>
-                    ) : (
-                        <a
-                            href="/login"
-                            className="text-sm font-semibold rounded-3xl bg-color-brand-700 hover:bg-color-brand-600 text-black flex h-8 min-w-[80px] px-4 justify-center items-center"
-                        >
-                            Log in
-                        </a>
-                    )}
-                </div>
-            ) : (
-                <></>
-            )}
-            <div className={isLandscape ? "pb-2" : "px-4"} id="how-to-trade">
+            <div className={"px-4"} id="how-to-trade">
                 <HowToTrade />
             </div>
-            {isLandscape ? (
-                // Desktop layout
-                <div className="flex-1 flex flex-col">
-                    <div
-                        className="flex flex-col gap-0"
-                        onMouseDown={() => {
-                            // When clicking anywhere in the trade fields section, hide any open controllers
-                            const event = new MouseEvent("mousedown", {
-                                bubbles: true,
-                                cancelable: true,
-                            });
-                            document.dispatchEvent(event);
-                        }}
-                    >
-                        <div className="flex flex-col gap-2">
-                            {config.fields.duration && (
-                                <Suspense fallback={<div>Loading duration field...</div>}>
-                                    <DurationField className="w-full" />
-                                </Suspense>
-                            )}
-                            {config.fields.stake && (
-                                <Suspense fallback={<div>Loading stake field...</div>}>
-                                    <StakeField
-                                        className="w-full"
-                                        stake={stake}
-                                        setStake={handleStakeChange}
-                                        productConfig={productConfig}
-                                        currency={currency}
-                                        isConfigLoading={!productConfig}
-                                        handleError={handleStakeError}
-                                    />
-                                </Suspense>
-                            )}
-                        </div>
-                        {config.fields.allowEquals && <EqualTradeController />}
-                    </div>
-
-                    <div className="flex flex-col py-2 gap-2" id="trade-buttons">
-                        {config.buttons.map((button) => (
-                            <Suspense key={button.actionName} fallback={<div>Loading...</div>}>
-                                <TradeButton
-                                    className={`${button.className} rounded-[16px] h-[48px] py-3 [&>div]:px-2 [&_span]:text-sm`}
-                                    title={button.title}
-                                    label={button.label}
-                                    value={
-                                        buttonStates[button.actionName]?.loading
-                                            ? "Loading..."
-                                            : `${
-                                                  buttonStates[button.actionName]?.payout ||
-                                                  (productConfig?.data.validations.payout.max
-                                                      ? Number(
-                                                            productConfig.data.validations.payout
-                                                                .max
-                                                        )
-                                                      : 0)
-                                              } ${currency}`
-                                    }
-                                    title_position={button.position}
-                                    disabled={
-                                        buttonStates[button.actionName]?.loading ||
-                                        Boolean(buttonStates[button.actionName]?.validationError)
-                                        // Commenting it as api is not working we'll enable it once api is working
-                                        // buttonStates[button.actionName]?.error !== null
-                                    }
-                                    loading={
-                                        buttonStates[button.actionName]?.loading ||
-                                        isProposalConnecting
-                                        // Commenting it as api is not working we'll enable it once api is working
-                                        // buttonStates[button.actionName]?.reconnecting
-                                    }
-                                    error={
-                                        buttonStates[button.actionName]?.validationError
-                                            ? {
-                                                  error:
-                                                      buttonStates[button.actionName]
-                                                          ?.validationError || "",
-                                              }
-                                            : buttonStates[button.actionName]?.error
-                                    }
-                                    onClick={() =>
-                                        handleTradeClick({
-                                            isLoggedIn,
-                                            tradeActions,
-                                            actionName: button.actionName,
-                                            buttonTitle: button.title,
-                                            isLandscape,
-                                            setSidebar,
-                                            stake,
-                                            currency,
-                                            instrument,
-                                            toast,
-                                            hideToast,
-                                        })
+            <div className="flex-1 flex flex-col">
+                <div
+                    className="flex flex-col gap-0"
+                    onMouseDown={() => {
+                        // When clicking anywhere in the trade fields section, hide any open controllers
+                        const event = new MouseEvent("mousedown", {
+                            bubbles: true,
+                            cancelable: true,
+                        });
+                        document.dispatchEvent(event);
+                    }}
+                >
+                    <div className="flex flex-col gap-2">
+                        {config.fields.duration && (
+                            <Suspense fallback={<div>Loading duration field...</div>}>
+                                <DurationField
+                                    className={`w-full ${
+                                        Object.values(buttonStates).some((state) => state.loading)
+                                            ? "opacity-50"
+                                            : ""
+                                    }`}
+                                    disabled={Object.values(buttonStates).some(
+                                        (state) => state.loading
+                                    )}
+                                />
+                            </Suspense>
+                        )}
+                        {config.fields.stake && (
+                            <Suspense fallback={<div>Loading stake field...</div>}>
+                                <StakeField
+                                    className={`w-full ${Object.values(buttonStates).some((state) => state.loading) ? "opacity-50" : ""}`}
+                                    stake={stake}
+                                    setStake={handleStakeChange}
+                                    productConfig={productConfig}
+                                    currency={currency}
+                                    isConfigLoading={!productConfig}
+                                    handleError={handleStakeError}
+                                    stackDisabled={
+                                        !!stake &&
+                                        Object.values(buttonStates).some((state) => state.loading)
                                     }
                                 />
                             </Suspense>
-                        ))}
+                        )}
                     </div>
-                    <div className="mt-auto">
-                        <ServerTime />
-                    </div>
+                    {config.fields.allowEquals && <EqualTradeController />}
                 </div>
-            ) : (
-                // Mobile layout
-                <>
-                    <div id="trade-fields" className="flex flex-col">
-                        <div className="px-4 py-3">
-                            <ResponsiveTradeParamLayout>
-                                {config.fields.duration && (
-                                    <Suspense fallback={<div>Loading duration field...</div>}>
-                                        <DurationField />
-                                    </Suspense>
-                                )}
-                                {config.fields.stake && (
-                                    <Suspense fallback={<div>Loading stake field...</div>}>
-                                        <StakeField
-                                            stake={stake}
-                                            setStake={handleStakeChange}
-                                            productConfig={productConfig}
-                                            currency={currency}
-                                            isConfigLoading={!productConfig}
-                                            handleError={handleStakeError}
-                                        />
-                                    </Suspense>
-                                )}
-                            </ResponsiveTradeParamLayout>
-                            {config.fields.allowEquals && (
-                                <Suspense fallback={<div>Loading equals controller...</div>}>
-                                    <div className="mt-4">
-                                        <EqualTradeController />
-                                    </div>
-                                </Suspense>
-                            )}
-                        </div>
-                    </div>
 
-                    <div className="flex p-4 pt-0 gap-2" id="trade-buttons">
-                        {config.buttons.map((button) => (
-                            <Suspense key={button.actionName} fallback={<div>Loading...</div>}>
-                                <TradeButton
-                                    className={`${button.className} rounded-[32px]`}
-                                    title={button.title}
-                                    label={button.label}
-                                    value={
-                                        buttonStates[button.actionName]?.loading
-                                            ? "Loading..."
-                                            : `${
-                                                  buttonStates[button.actionName]?.payout ||
-                                                  (productConfig?.data.validations.payout.max
-                                                      ? Number(
-                                                            productConfig.data.validations.payout
-                                                                .max
-                                                        )
-                                                      : 0)
-                                              } ${currency}`
-                                    }
-                                    title_position={button.position}
-                                    disabled={
-                                        buttonStates[button.actionName]?.loading ||
-                                        Boolean(buttonStates[button.actionName]?.validationError)
-                                        // ||
-                                        // Commenting it as api is not working we'll enable it once api is working
-                                        // buttonStates[button.actionName]?.error !== null
-                                    }
-                                    loading={
-                                        buttonStates[button.actionName]?.loading ||
-                                        isProposalConnecting
-                                        // ||
-                                        // Commenting it as api is not working we'll enable it once api is working
-                                        // buttonStates[button.actionName]?.reconnecting
-                                    }
-                                    error={
-                                        buttonStates[button.actionName]?.validationError
-                                            ? {
-                                                  error:
-                                                      buttonStates[button.actionName]
-                                                          ?.validationError || "",
-                                              }
-                                            : buttonStates[button.actionName]?.error
-                                    }
-                                    onClick={() =>
-                                        handleTradeClick({
-                                            isLoggedIn,
-                                            tradeActions,
-                                            actionName: button.actionName,
-                                            buttonTitle: button.title,
-                                            isLandscape,
-                                            setSidebar,
-                                            stake,
-                                            currency,
-                                            instrument,
-                                            toast,
-                                            hideToast,
-                                        })
-                                    }
-                                />
-                            </Suspense>
-                        ))}
-                    </div>
-                </>
-            )}
+                <div className={`flex py-2 gap-2 ${isMobile ? "flex-col" : ""}`} id="trade-buttons">
+                    {config.buttons.map((button) => (
+                        <Suspense key={button.actionName} fallback={<div>Loading...</div>}>
+                            <TradeButton
+                                className={`${button.className} rounded-[16px] h-[48px] py-3 [&>div]:px-2 [&_span]:text-sm`}
+                                title={button.title}
+                                label={button.label}
+                                value={
+                                    buttonStates[button.actionName]?.loading
+                                        ? "Loading..."
+                                        : buttonStates[button.actionName]?.validationError
+                                          ? "-"
+                                          : `${
+                                                buttonStates[button.actionName]?.payout || 0
+                                            } ${currency}`
+                                }
+                                title_position={button.position}
+                                disabled={
+                                    buttonStates[button.actionName]?.loading ||
+                                    Boolean(buttonStates[button.actionName]?.validationError)
+                                    // Commenting it as api is not working we'll enable it once api is working
+                                    // buttonStates[button.actionName]?.error !== null
+                                }
+                                loading={
+                                    buttonStates[button.actionName]?.loading || isProposalConnecting
+                                    // Commenting it as api is not working we'll enable it once api is working
+                                    // buttonStates[button.actionName]?.reconnecting
+                                }
+                                error={
+                                    buttonStates[button.actionName]?.validationError
+                                        ? {
+                                              error:
+                                                  buttonStates[button.actionName]
+                                                      ?.validationError || "",
+                                          }
+                                        : buttonStates[button.actionName]?.error
+                                }
+                                onClick={() =>
+                                    handleTradeClick({
+                                        isLoggedIn,
+                                        tradeActions,
+                                        actionName: button.actionName,
+                                        buttonTitle: button.title,
+                                        isLandscape,
+                                        setSidebar,
+                                        stake,
+                                        currency,
+                                        instrument,
+                                        toast,
+                                        hideToast,
+                                    })
+                                }
+                            />
+                        </Suspense>
+                    ))}
+                </div>
+                <div className="mt-auto">
+                    <ServerTime />
+                </div>
+            </div>
         </div>
     );
 };

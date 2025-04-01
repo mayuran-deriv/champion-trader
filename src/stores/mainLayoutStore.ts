@@ -36,9 +36,9 @@ export const useMainLayoutStore = create<MainLayoutStore>()(
                 })),
             setTheme: (theme: Theme) => set({ theme }),
 
-            // SideNav state
+            // SideNav state - always visible in desktop
             isSideNavVisible: true,
-            setSideNavVisible: (isVisible) => set({ isSideNavVisible: isVisible }),
+            setSideNavVisible: (isVisible) => set({ isSideNavVisible: true }),
 
             // Sidebar state
             activeSidebar: null,

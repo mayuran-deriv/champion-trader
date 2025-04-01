@@ -3,6 +3,7 @@ import { useOrientationStore } from "@/stores/orientationStore";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { useDeviceDetection } from "@/hooks";
 
 export interface TradeButtonProps {
     title: string;
@@ -27,7 +28,7 @@ export const TradeButton: React.FC<TradeButtonProps> = ({
     loading,
     error,
 }) => {
-    const { isLandscape } = useOrientationStore();
+    const { isMobile } = useDeviceDetection();
 
     return (
         <Tooltip.Provider>
@@ -35,8 +36,8 @@ export const TradeButton: React.FC<TradeButtonProps> = ({
                 <Tooltip.Trigger asChild>
                     <Button
                         className={cn(
-                            "flex-1 flex flex-col gap-1 text-white rounded-full",
-                            isLandscape ? "py-4 h-12" : "py-6 h-16",
+                            "flex  gap-1 text-white rounded-full",
+                            !isMobile ? "py-4 h-12 w-[400px]" : "py-6 h-16",
                             className
                         )}
                         variant="default"
@@ -46,7 +47,7 @@ export const TradeButton: React.FC<TradeButtonProps> = ({
                         <div
                             className={cn(
                                 "flex items-center w-full px-3",
-                                !isLandscape
+                                isMobile
                                     ? title_position === "right"
                                         ? "justify-end"
                                         : "justify-between"
@@ -55,10 +56,7 @@ export const TradeButton: React.FC<TradeButtonProps> = ({
                         >
                             <div className="flex items-center gap-2">
                                 <span
-                                    className={cn(
-                                        "font-bold",
-                                        isLandscape ? "text-base" : "text-lg"
-                                    )}
+                                    className={cn("font-bold", !isMobile ? "text-base" : "text-lg")}
                                 >
                                     {title}
                                 </span>
@@ -90,7 +88,7 @@ export const TradeButton: React.FC<TradeButtonProps> = ({
                         <div
                             className={cn(
                                 "flex items-center w-full px-3",
-                                !isLandscape
+                                isMobile
                                     ? title_position === "right"
                                         ? "justify-between"
                                         : "justify-between flex-row-reverse"

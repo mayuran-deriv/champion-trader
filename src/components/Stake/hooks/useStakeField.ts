@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { validateStake } from "../utils/validation";
 import { incrementStake, decrementStake, parseStakeAmount } from "@/utils/stake";
 import { useBottomSheetStore } from "@/stores/bottomSheetStore";
-import { useTooltipStore } from "@/stores/tooltipStore";
+import { useTradeStore } from "@/stores/tradeStore";
 
 interface UseStakeFieldParams {
     stake: string;
@@ -41,7 +41,7 @@ export const useStakeField = ({
     // isConfigLoading is used in the component but not in the hook
     // We're keeping it in the interface for API consistency
     const { setBottomSheet } = useBottomSheetStore();
-    const { showTooltip, hideTooltip } = useTooltipStore();
+    const { setStakeError } = useTradeStore();
 
     // Internal state
     const [isStakeSelected, setIsStakeSelected] = useState(false);
@@ -57,10 +57,9 @@ export const useStakeField = ({
     }, [stake]);
 
     const showError = (message: string) => {
-        if (containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            showTooltip(message, { x: rect.left - 8, y: rect.top + rect.height / 2 }, "error");
-        }
+        // Set error message in state instead of showing tooltip
+        setError(true);
+        setErrorMessage(message);
     };
 
     const validateAndUpdateStake = (value: string) => {
@@ -99,20 +98,18 @@ export const useStakeField = ({
         if (!productConfig) return;
 
         const newValue = incrementStake(stake || "0");
-        if (validateAndUpdateStake(newValue)) {
-            setStake(newValue);
-            hideTooltip();
-        }
+        setStake(newValue);
+        const isValid = validateAndUpdateStake(newValue);
+        setStakeError(!isValid);
     };
 
     const defaultHandleDecrement = () => {
         if (!productConfig) return;
 
         const newValue = decrementStake(stake || "0");
-        if (validateAndUpdateStake(newValue)) {
-            setStake(newValue);
-            hideTooltip();
-        }
+        setStake(newValue);
+        const isValid = validateAndUpdateStake(newValue);
+        setStakeError(!isValid);
     };
 
     const defaultHandleMobileClick = () => {
@@ -124,11 +121,6 @@ export const useStakeField = ({
         if (!productConfig) return;
 
         setIsStakeSelected(selected);
-
-        // Show error tooltip if there's an error
-        if (error && errorMessage) {
-            showError(errorMessage);
-        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,10 +176,10 @@ export const useStakeField = ({
 
         const numValue = parseFloat(value);
         if (!isNaN(numValue)) {
-            if (validateAndUpdateStake(value)) {
-                setStake(value);
-                hideTooltip();
-            }
+            setStake(value);
+            const isValid = validateAndUpdateStake(value);
+
+            setStakeError(!isValid);
 
             // Restore cursor position after React updates the input
             setTimeout(() => {

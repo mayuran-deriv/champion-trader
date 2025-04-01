@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useMemo } from "react";
 import { TabList, Tab } from "@/components/ui/tab-list";
 import { BottomSheetHeader } from "@/components/ui/bottom-sheet-header";
 import { DurationValueList } from "./components/DurationValueList";
-import { HoursDurationValue } from "./components/HoursDurationValue";
 import { useTradeStore } from "@/stores/tradeStore";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { generateDurationValues as getDurationValues, getDefaultDuration } from "@/utils/duration";
@@ -124,27 +123,16 @@ export const DurationController: React.FC<DurationControllerProps> = ({ onClose 
                     />
                 </div>
                 <div className={`flex-1 relative bg-theme ${isLandscape ? "px-2" : "px-8"}`}>
-                    {selectedTabType === "hours" ? (
-                        <HoursDurationValue
-                            selectedValue={selectedValue?.toString() || ""}
-                            onValueSelect={(value) => {
-                                handleValueSelect(value);
-                            }}
-                            onValueClick={handleValueClick}
-                            isInitialRender={isInitialRender}
-                        />
-                    ) : (
-                        <DurationValueList
-                            key={String(selectedTabType)}
-                            selectedValue={
-                                (selectedValue as number) ?? getDefaultDuration(selectedTabType)
-                            }
-                            durationType={selectedTabType}
-                            onValueSelect={handleValueSelect}
-                            onValueClick={handleValueClick}
-                            getDurationValues={getDurationValues}
-                        />
-                    )}
+                    <DurationValueList
+                        key={String(selectedTabType)}
+                        selectedValue={
+                            (selectedValue as number) ?? getDefaultDuration(selectedTabType)
+                        }
+                        durationType={selectedTabType}
+                        onValueSelect={handleValueSelect}
+                        onValueClick={handleValueClick}
+                        getDurationValues={getDurationValues}
+                    />
                 </div>
             </div>
             {!isLandscape && (

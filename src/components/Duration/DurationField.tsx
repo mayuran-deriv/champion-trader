@@ -10,9 +10,10 @@ import { useOrientationStore } from "@/stores/orientationStore";
 
 interface DurationFieldProps {
     className?: string;
+    disabled?: boolean;
 }
 
-export const DurationField: React.FC<DurationFieldProps> = ({ className }) => {
+export const DurationField: React.FC<DurationFieldProps> = ({ className, disabled = false }) => {
     const { duration, isConfigLoading, productConfig } = useTradeStore();
     const { setBottomSheet } = useBottomSheetStore();
     const { isLandscape } = useOrientationStore();
@@ -67,15 +68,15 @@ export const DurationField: React.FC<DurationFieldProps> = ({ className }) => {
             ) : (
                 <MobileTradeFieldCard onClick={handleClick}>{tradeParam}</MobileTradeFieldCard>
             )}
-            {isLandscape && isOpen && (
+            {isLandscape && isOpen && !disabled && (
                 <Popover
                     isOpen={isOpen}
                     onClose={handleClose}
                     style={{
                         position: "absolute",
-                        right: "100%",
-                        top: "-8px",
-                        marginRight: "16px",
+                        left: "100%",
+                        top: "8px",
+                        marginLeft: "50px",
                     }}
                 >
                     <DurationController onClose={handleClose} />

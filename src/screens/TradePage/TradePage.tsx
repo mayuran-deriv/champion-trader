@@ -1,7 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { useOrientationStore } from "@/stores/orientationStore";
 import { BottomSheet } from "@/components/BottomSheet";
-import { DurationOptions } from "@/components/DurationOptions";
 import { TradeFormController } from "./components/TradeFormController";
 import { useBottomSheetStore } from "@/stores/bottomSheetStore";
 import { MarketSelector } from "@/components/MarketSelector";
@@ -9,6 +8,8 @@ import { useDeviceDetection } from "@/hooks/useDeviceDetection";
 import { useMainLayoutStore } from "@/stores/mainLayoutStore";
 import { useMarketStore } from "@/stores/marketStore";
 import { useTradeStore } from "@/stores/tradeStore";
+import { HowToTrade } from "@/components/HowToTrade";
+import { ChevronDown } from "lucide-react";
 import { MarketInfo } from "@/components/MarketInfo";
 import { TradeTypesListController } from "./components/TradeTypesListController";
 
@@ -23,7 +24,7 @@ export const TradePage: React.FC = () => {
     const { setBottomSheet } = useBottomSheetStore();
     const { isMobile } = useDeviceDetection();
     const selectedMarket = useMarketStore((state) => state.selectedMarket);
-    const { setOverlaySidebar, activeSidebar } = useMainLayoutStore();
+    const { setOverlaySidebar } = useMainLayoutStore();
     const tradeTypeDisplayName = useTradeStore((state) => state.tradeTypeDisplayName);
 
     const handleMarketSelect = React.useCallback(() => {
@@ -34,60 +35,33 @@ export const TradePage: React.FC = () => {
         }
     }, [isMobile, setBottomSheet, setOverlaySidebar]);
 
-    return (
-        <div
-            className={`flex ${
-                isLandscape ? "flex-row relative h-full py-2" : "flex-col h-[100dvh]"
-            } flex-1 lg:py-4`}
-            data-testid="trade-page"
-        >
-            <div className="flex flex-col flex-1 min-h-0 gap-2">
-                <TradeTypesListController />
-                <div
-                    className={`relative flex flex-col flex-1 overflow-hidden ${
-                        isLandscape ? "mb-2" : ""
-                    }`}
-                >
-                    {isLandscape && (
-                        <div
-                            className={`absolute ${
-                                activeSidebar ? "left-[calc(320px+16px)]" : "left-4"
-                            } z-10 transition-all duration-300`}
-                        >
-                            <MarketInfo
-                                title={selectedMarket?.displayName || "Select Market"}
-                                subtitle={tradeTypeDisplayName}
-                                onClick={handleMarketSelect}
-                                isMobile={false}
-                            />
-                        </div>
-                    )}
-                    {!isLandscape && (
-                        <MarketInfo
-                            title={selectedMarket?.displayName || "Select Market"}
-                            subtitle={tradeTypeDisplayName}
-                            onClick={handleMarketSelect}
-                            isMobile={true}
-                        />
-                    )}
-                    <div className="flex-1 relative">
-                        <Suspense fallback={<div>Loading...</div>}>
-                            <Chart />
-                        </Suspense>
-                    </div>
+    const handleTradeTypeSelect = React.useCallback(() => {
+        if (isMobile) {
+            setBottomSheet(true, "trade-types", "80%");
+        } else {
+            setOverlaySidebar(true, "trade-types");
+        }
+    }, [isMobile, setBottomSheet, setOverlaySidebar]);
 
-                    {!isLandscape && (
-                        <Suspense fallback={<div>Loading...</div>}>
-                            <DurationOptions />
-                        </Suspense>
-                    )}
+    return (
+        <div className="flex flex-col flex-1 p-4 gap-4" data-testid="trade-page">
+            {/* Top section with Market and Trade Type selectors */}
+            <TradeTypesListController /> {/* Trade Type Selector */}
+            <div className="flex justify-between items-center gap-4">
+                <MarketInfo
+                    title={selectedMarket?.displayName || "Select Market"}
+                    subtitle={tradeTypeDisplayName}
+                    onClick={handleMarketSelect}
+                    isMobile={false}
+                />
+            </div>
+            {/* Trade Form */}
+            <div className="flex flex-col gap-4">
+                <div className="bg-white rounded-lg shadow p-4 max-w-[600px]">
+                    <TradeFormController isLandscape={!isMobile} />
                 </div>
             </div>
-
-            <TradeFormController isLandscape={isLandscape} />
-
             {!isMobile && <MarketSelector />}
-
             <BottomSheet />
         </div>
     );

@@ -75,6 +75,8 @@ interface TradeState {
     positionsLoading: boolean;
     /** Error state for positions */
     positionsError: Error | null;
+    /** Error state for stake */
+    isStakeError: boolean;
 
     // Trade Actions
     /** Set the stake amount */
@@ -126,11 +128,14 @@ interface TradeState {
     setPositionsLoading: (isLoading: boolean) => void;
     /** Set the error state for positions */
     setPositionsError: (error: Error | null) => void;
+    /** Set the error state for stake */
+    setStakeError: (error: boolean) => void;
 }
 
 export const useTradeStore = create<TradeState>((set) => ({
     // Trade State
     stake: "",
+    isStakeError: false,
     duration: "",
     allowEquals: false,
     trade_type: "rise_fall", // Default to rise_fall trade type
@@ -164,6 +169,7 @@ export const useTradeStore = create<TradeState>((set) => ({
     setAllowEquals: (allowEquals: boolean) => set({ allowEquals }),
     setPayouts: (payouts) => set({ payouts }),
     setInstrument: (instrument: string) => set({ instrument }),
+    setStakeError: (error: boolean) => set({ isStakeError: error }),
     setTradeType: (trade_type: TradeType, display_name?: string) =>
         set((state) => ({
             trade_type,

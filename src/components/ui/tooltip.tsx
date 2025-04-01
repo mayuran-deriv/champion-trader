@@ -23,8 +23,8 @@ export const Tooltip = () => {
         position: "fixed" as const,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        transform: "translate(-100%, -50%)",
-        marginLeft: "-16px",
+        transform: "translate(0, -100%)",
+        marginTop: "-8px",
     };
 
     return (
@@ -33,8 +33,8 @@ export const Tooltip = () => {
             style={tooltipStyles}
             className={cn(
                 "z-50 px-4 py-2 rounded-lg shadow-lg whitespace-nowrap font-ibm-plex text-xs leading-[18px] font-normal",
-                "after:content-[''] after:absolute after:top-1/2 after:-right-2",
-                "after:w-4 after:h-4 after:-translate-y-1/2 after:rotate-45",
+                "after:content-[''] after:absolute after:bottom-[-8px] after:left-4",
+                "after:w-4 after:h-4 after:rotate-45",
                 {
                     "bg-red-500 text-white after:bg-red-500": type === "error",
                     "bg-blue-500 text-white after:bg-blue-500": type === "info",

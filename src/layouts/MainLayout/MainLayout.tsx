@@ -19,7 +19,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const { activeSidebar, setSidebar } = useMainLayoutStore();
     const isBottomNavVisible = useBottomNavStore((state) => state.isVisible);
     const location = useLocation();
-    const isResponsiveHeaderVisible = isMobile && !location.pathname.includes("/contract/");
+    const isResponsiveHeaderVisible = !location.pathname.includes("/contract/");
 
     useEffect(() => {
         const handleOrientationChange = () => {
@@ -53,9 +53,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     isLandscape && !shouldEnableScrolling ? "overflow-hidden" : ""
                 }`}
             >
-                {isLandscape && <SideNav />}
+                {!isMobile && <SideNav />}
                 <div className="flex flex-1 overflow-hidden">
-                    {isLandscape ? (
+                    {!isMobile ? (
                         <div className="flex flex-1">
                             <div className="relative z-[50]">
                                 <Sidebar
@@ -82,7 +82,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     )}
                 </div>
             </div>
-            {!isLandscape && isBottomNavVisible && (
+            {isMobile && isBottomNavVisible && (
                 <Footer className="sticky bottom-0 left-0 right-0 z-50 w-full" />
             )}
         </div>
